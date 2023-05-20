@@ -1,0 +1,374 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <windows.h>
+#include <conio.h>
+#define MAX 100
+#define CONSOLEX 100
+#define GOTOY 24
+#define FLUCTLIST 48
+#define FLUCTUAT 2.0
+#define PRICELIST 9000
+#define DIFFER 0.0001
+int i = 0, j = 0, k = 0, l = 0;
+int x = 1, y = 1, jl = 1, ik = MAX;
+int q = 1, value = 0;
+
+void error(char str[])
+{
+	printf("%s\n", str);
+	exit(1);
+}
+
+void gotoxy(int x, int y)
+{
+	COORD Pos = { x - 1, y - 1 };
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Pos);
+}
+
+int main(void)
+{
+    int select[FLUCTLIST] = { 0 };
+
+    float dif, qdif1, qdif2;
+    char console[20] = { 0 };
+
+    char id[MAX][8] = { 0 };
+    char name[MAX][50] = { 0 };
+    char marketSegmentaitom[MAX][30] = { 0 };
+    char affiliation[MAX][30] = { 0 };
+    int closingPrice[MAX] = { 0 };
+    int DoD[MAX] = { 0 };
+    float fluctuation[MAX] = { 0 };
+
+    float sharePrice[PRICELIST] = { 0 };
+
+    float per[FLUCTLIST] = { 0 }, pbr[FLUCTLIST] = { 0 };
+
+    FILE* fp1;
+    FILE* fp2;
+    FILE* fp3;
+	errno_t err1, err2, err3;
+
+	err1 = fopen_s(&fp1, "APIFILE.txt", "rt");
+    err2 = fopen_s(&fp2, "SAMPLE.txt", "rt");
+    err3 = fopen_s(&fp3, "FINANCE.txt", "rt");
+	if (NULL == fp1) 
+		error("파일열기실패");
+    if (NULL == fp2)
+        error("파일열기실패");
+    if (NULL == fp3)
+        error("파일열기실패");
+
+    i = 0;
+    while (i < MAX) {
+        fscanf_s(fp1, "%s %s %s %s %d %d %f", id[i], 8, name[i], 50, marketSegmentaitom[i], 30, affiliation[i], 30, &closingPrice[i], &DoD[i], &fluctuation[i]);
+        fscanf_s(fp1, "%*[^\n]");
+        i++;
+    }
+
+    i = 0;
+    while (i < PRICELIST) {
+        fscanf_s(fp2, "%*[^ ]");
+        fscanf_s(fp2, "%f", &sharePrice[i]);
+        fscanf_s(fp2, "%*[^\n]");
+        i++;
+    }
+
+    i = 0;
+    while (i < FLUCTLIST) {
+        fscanf_s(fp3, "%f %f", &per[i], &pbr[i]);
+        i++;
+    }
+
+    i = 0;
+    while (i < MAX) {
+        if (fluctuation[i] > FLUCTUAT || fluctuation[i] < -FLUCTUAT) {
+            select[j] = i;
+            j++;
+        }
+        i++;
+    }
+
+a:
+
+    system("cls");
+
+    for (i = 0; i < 12; i++) {
+        for (j = 0; j < 4; j++) {
+            if (select[k] == 0)
+                break;
+            gotoxy(j * 20 + 10, i * 2 + 1);
+            printf(":%s", name[select[k]]);
+            k++;
+        }
+    }
+
+    i = 0;
+    j = 0;
+    gotoxy(j * 20 + 10, i * 2 + 1);
+    while (_getch() != 13) {
+        switch (_getch()) {
+        case 'w':
+            if (i == 0)
+                break;
+            i--;
+            gotoxy(j * 20 + 10, i * 2 + 1);
+            break;
+        case 's':
+            if (i == 11)
+                break;
+            i++;
+            gotoxy(j * 20 + 10, i * 2 + 1);
+            break;
+        case 'a':
+            if (j == 0)
+                break;
+            j--;
+            gotoxy(j * 20 + 10, i * 2 + 1);
+            break;
+        case 'd':
+            if (j == 3)
+                break;
+            j++;
+            gotoxy(j * 20 + 10, i * 2 + 1);
+            break;
+        }
+    }
+    if (i * 4 + j >= k) {
+        system("cls");
+        error("입력 오류");
+    }
+    k = i * 4 + j;
+
+b:
+    
+    system("cls");
+    
+    gotoxy(10, 2);
+    printf("-  w, s, a, d키를 눌러 위상 변화를 할 수 있습니다.");
+    gotoxy(10, 6);
+    printf("-  j, l, i, k키를 눌러 축소 및 확대를 할 수 있습니다.");
+    gotoxy(10, 10);
+    printf("-  q32d, e1m 과 같은 입력으로 기술 분석 그래프를 출력할 수 있습니다.");
+    gotoxy(10, 14);
+    printf("-  z를 입력하여 종목 선택 창으로 돌아가거나, c를 입력하여 프로그램을 종료할 수 있습니다.");
+    gotoxy(10, 18);
+    printf("넘어가기 위해 아무 키나 누르세요.");
+    gotoxy(10, 20);
+    _getch();
+
+c:
+
+    system("cls");
+
+    j = 0;
+
+    gotoxy(x, GOTOY + y);
+    for (i = 0; i < CONSOLEX; i = i + jl) {
+        dif = qdif1 = qdif2 = 0;
+        if (q == 1)
+            dif = (sharePrice[(1 + i) + k * CONSOLEX] 
+                - sharePrice[i + k * CONSOLEX]) / sharePrice[i + k * CONSOLEX];
+        else if (q > 1) {
+            for (l = (1 + i) + k * CONSOLEX; l < q + (1 + i) + k * CONSOLEX; l++)
+                qdif1 += sharePrice[l];
+            qdif1 /= q;
+            for (l = i + k * CONSOLEX; l < q + i + k * CONSOLEX; l++)
+                qdif2 += sharePrice[l];
+            qdif2 /= q;
+            
+            dif = (qdif1 - qdif2) / qdif2;
+        }
+
+        if (dif > DIFFER * ik) {
+            gotoxy(x + i, GOTOY + y + j--);
+            printf("/");
+        }
+        else if (DIFFER * ik > dif > -DIFFER * ik) {
+            gotoxy(x + i, GOTOY + y + j);
+            printf("ㅡ");
+        }
+        else {
+            gotoxy(x + i, GOTOY + y + j++);
+            printf("|");
+        }
+    }
+
+    gotoxy(1, 1);
+    printf("%s %s %s %s x:%d y:%d jl:%d ik:%d q:%d per:%f pbr:%f", id[select[k]], name[select[k]], marketSegmentaitom[select[k]], affiliation[select[k]], x, y, jl, ik, q, per[k], pbr[k]);
+
+    gotoxy(1, 2);
+    printf(":                    |설명서를 출력하려면 x를 입력하세요.");
+    gotoxy(2, 2);
+    gets(console);
+    
+    while (1) {
+        if (console[0] == 'w') {
+            for (i = 1; i < 20; i++) {
+                if ((console[i] >= '0' && console[i] <= '9')) {
+                    value = 0;
+                    while ((console[i] >= '0' && console[i] <= '9')) {
+                        value = value * 10 + (console[i] - '0');
+                        i++;
+                    }
+                    y = y - value;
+                    goto c;
+                }
+            }
+            y--;
+            goto c;
+        }
+        else if (console[0] == 's') {
+            for (i = 1; i < 20; i++) {
+                if ((console[i] >= '0' && console[i] <= '9')) {
+                    value = 0;
+                    while ((console[i] >= '0' && console[i] <= '9')) {
+                        value = value * 10 + (console[i] - '0');
+                        i++;
+                    }
+                    y = y + value;
+                    goto c;
+                }
+            }
+            y++;
+            goto c;
+        }
+        else if (console[0] == 'a') {
+            for (i = 1; i < 20; i++) {
+                if ((console[i] >= '0' && console[i] <= '9')) {
+                    value = 0;
+                    while ((console[i] >= '0' && console[i] <= '9')) {
+                        value = value * 10 + (console[i] - '0');
+                        i++;
+                    }
+                    x = x + value;
+                    goto c;
+                }
+            }
+            x++;
+            goto c;
+        }
+        else if (console[0] == 'd') {
+            for (i = 1; i < 20; i++) {
+                if ((console[i] >= '0' && console[i] <= '9')) {
+                    value = 0;
+                    while ((console[i] >= '0' && console[i] <= '9')) {
+                        value = value * 10 + (console[i] - '0');
+                        i++;
+                    }
+                    x = x - value;
+                    goto c;
+                }
+            }
+            x--;
+            goto c;
+        }
+        else if (console[0] == 'j') {
+            for (i = 1; i < 20; i++) {
+                if ((console[i] >= '0' && console[i] <= '9')) {
+                    value = 0;
+                    while ((console[i] >= '0' && console[i] <= '9')) {
+                        value = value * 10 + (console[i] - '0');
+                        i++;
+                    }
+                    if (jl - value < 1)
+                        goto c;
+                    jl = jl - value;
+                    goto c;
+                }
+            }
+            if (jl - value < 1)
+                goto c;
+            jl--;
+            goto c;
+        }
+        else if (console[0] == 'l') {
+            for (i = 1; i < 20; i++) {
+                if ((console[i] >= '0' && console[i] <= '9')) {
+                    value = 0;
+                    while ((console[i] >= '0' && console[i] <= '9')) {
+                        value = value * 10 + (console[i] - '0');
+                        i++;
+                    }
+                    jl = jl + value;
+                    goto c;
+                }
+            }
+            jl++;
+            goto c;
+        }
+        else if (console[0] == 'i') {
+            for (i = 1; i < 20; i++) {
+                if ((console[i] >= '0' && console[i] <= '9')) {
+                    value = 0;
+                    while ((console[i] >= '0' && console[i] <= '9')) {
+                        value = value * 10 + (console[i] - '0');
+                        i++;
+                    }
+                    ik = ik + value;
+                    goto c;
+                }
+            }
+            ik++;
+            goto c;
+        }
+        else if (console[0] == 'k') {
+            for (i = 1; i < 20; i++) {
+                if ((console[i] >= '0' && console[i] <= '9')) {
+                    value = 0;
+                    while ((console[i] >= '0' && console[i] <= '9')) {
+                        value = value * 10 + (console[i] - '0');
+                        i++;
+                    }
+                    if (ik - value < 1)
+                        goto c;
+                    ik = ik - value;
+                    goto c;
+                }
+            }
+            if (ik - value < 1)
+                goto c;
+            ik--;
+            goto c;
+        }
+        else if (console[0] == 'q') {
+            for (i = 1; i < 20; i++) {
+                if ((console[i] >= '0' && console[i] <= '9')) {
+                    value = 0;
+                    while ((console[i] >= '0' && console[i] <= '9')) {
+                        value = value * 10 + (console[i] - '0');
+                        i++;
+                    }
+                    if (console[i] == 'w')
+                        q = 7 * value;
+                    else if (console[i] == 'm')
+                        q = 30 * value;
+                    else
+                        q = value;
+                    goto c;
+                }
+            }
+            goto c;
+        }
+        else if (console[0] == 'e') {
+            goto c;
+        }
+        else if (console[0] == 'z') {
+            goto a;
+        }
+        else if (console[0] == 'x') {
+            goto b;
+        }
+        else if (console[0] == 'c') {
+            system("cls");
+            fclose(fp1);
+            fclose(fp2);
+            fclose(fp3);
+            return 0;
+        }
+        else
+            goto c;
+    }
+}
